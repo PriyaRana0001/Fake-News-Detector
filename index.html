@@ -1,111 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
-<title>Fake News Detector</title>
-<style>
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    height: 100vh;
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TruthLens 4.0 | AI News Forensics</title>
 
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 
-    background: radial-gradient(circle at top, #8a7cd3, #5a5dbb);
-}
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-.box {
-    width: 500px;
-    padding: 100px;
-
-    border-radius: 20px;
-
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(15px);
-
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-
-    text-align: center;
-    color: white;
-}
-h1 {
-    margin-bottom: 20px;
-}
-textarea {
-    width: 100%;
-    height: 120px;
-    display: block;
-    margin: 15px 0;
-    padding: 15px;
-    border-radius: 12px;
-    border: none;
-    outline: none;
-    background: rgba(255,255,255,0.3);
-    color: black;
-    font-size: 14px;
-}
-
-/* Button */
-button {
-    margin-top: 20px;
-
-    padding: 12px 30px;
-    border-radius: 12px;
-
-    border: none;
-
-    background: linear-gradient(135deg, #7f5af0, #6246ea);
-    color: white;
-
-    font-size: 16px;
-    cursor: pointer;
-
-    transition: 0.3s;
-}
-
-button:hover {
-    transform: scale(1.05);
-}
-#result {
-    margin-top: 20px;
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
-}
-</style>
+  <!-- External CSS -->
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
-<div class="box">
-    <h1>📰 Fake News Detector</h1>
+  <div class="container">
+    <header class="header">
+      <div class="logo"><i class="fa-solid fa-shield-halved"></i></div>
+      <h1>Fake News Detector</h1>
+      <p><i class="fa-solid fa-microchip"></i> &nbsp;Advanced AI News Forensics · Groq LPU Engine</p>
+    </header>
 
-    <textarea id="newsInput" placeholder="Enter news here..."></textarea>
+    <main class="card">
+      <label class="input-label" for="newsInput">Input analysis target</label>
+      <textarea id="newsInput" placeholder="Paste a news claim or article excerpt to run a full forensic analysis..."></textarea>
 
-   <button onclick="checkNews()">Check</button>
-   <p id="result"></p>
-</div>
+      <button class="btn" id="scanBtn" onclick="runForensics()">
+        <i class="fa-solid fa-magnifying-glass-chart"></i> Execute Forensic Scan
+      </button>
 
-<script>
-async function checkNews() {
-    const news = document.getElementById("newsInput").value;
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+        <div class="loader-text">Running forensic analysis...</div>
+        <div class="loader-step" id="loaderStep">Decoding linguistic signatures</div>
+      </div>
 
-    const response = await fetch("http://127.0.0.1:5000/check", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            text: news   // ✅ VERY IMPORTANT (key must be "text")
-        })
-    });
+      <!-- Verdict -->
+      <div class="verdict-banner" id="verdictBanner">
+        <div class="score-ring">
+          <svg width="60" height="60" viewBox="0 0 60 60">
+            <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
+            <circle id="scoreArc" cx="30" cy="30" r="24" fill="none" stroke-width="5"
+              stroke-linecap="round"
+              stroke-dasharray="150.8"
+              stroke-dashoffset="150.8"
+              style="transition: stroke-dashoffset 1.4s cubic-bezier(0.16,1,0.3,1);"/>
+          </svg>
+          <div class="score-label" id="scoreLabel">0%</div>
+        </div>
+        <div class="verdict-icon" id="verdictIcon"></div>
+        <div class="verdict-text-wrap">
+          <div class="verdict-eyebrow">Analysis verdict</div>
+          <div class="verdict-title" id="verdictTitle"></div>
+        </div>
+      </div>
 
-    const data = await response.json();
+      <!-- TTS Player -->
+      <div class="tts-panel" id="ttsPanel">
+        <div class="tts-controls">
+          <button class="tts-btn" onclick="restartSpeech()" title="Restart">
+            <i class="fa-solid fa-rotate-left"></i>
+          </button>
+          <button class="tts-btn tts-play-btn" id="ttsPlayBtn" onclick="toggleSpeech()" title="Play / Pause">
+            <i class="fa-solid fa-play" id="ttsPlayIcon"></i>
+          </button>
+          <button class="tts-btn" onclick="stopSpeech()" title="Stop">
+            <i class="fa-solid fa-stop"></i>
+          </button>
+        </div>
 
-    document.getElementById("result").innerText =
-        data.result || data.error;
-}
-</script>
+        <div class="tts-info">
+          <div class="tts-label">AI Voice Readout</div>
+          <div class="tts-track-name" id="ttsTrackName">Forensic analysis summary</div>
+          <div class="tts-wave paused" id="ttsWave">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; flex:1; min-width:120px;">
+          <div class="tts-progress-wrap">
+            <div class="tts-progress-bar" onclick="seekSpeech(event, this)">
+              <div class="tts-progress-fill" id="ttsProgress"></div>
+            </div>
+            <div class="tts-time">
+              <span id="ttsElapsed">0:00</span>
+              <span id="ttsDuration">0:00</span>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:6px;">
+            <i class="fa-solid fa-gauge" style="font-size:0.7rem; color:var(--text-secondary);"></i>
+            <button class="tts-speed" id="ttsSpeedBtn" onclick="cycleSpeed()">1×</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div class="results-wrap" id="resultsWrap">
+
+        <div class="section-title">Signal breakdown</div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+
+        <div class="section-title">Forensic summary</div>
+        <div class="summary-box">
+          <p class="summary-text" id="summaryText"></p>
+        </div>
+
+        <div class="section-title">Verify further</div>
+        <div class="verify-links" id="verifyLinks"></div>
+
+      </div>
+
+      <div class="features">
+        <div class="feature"><i class="fa-solid fa-microchip"></i><span>Groq LPU Engine</span></div>
+        <div class="feature"><i class="fa-solid fa-volume-high"></i><span>Voice Readout</span></div>
+        <div class="feature"><i class="fa-solid fa-lock"></i><span>Forensic Grade</span></div>
+      </div>
+    </main>
+  </div>
+  <!-- External JS -->
+  <script src="script.js"></script>
 </body>
 </html>
