@@ -1,0 +1,26 @@
+{
+  "name": "fake-news-detector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PriyaRana0001/Fake-News-Detector.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/PriyaRana0001/Fake-News-Detector/issues"
+  },
+  "homepage": "https://github.com/PriyaRana0001/Fake-News-Detector#readme",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1"
+  }
+}

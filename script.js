@@ -1,6 +1,6 @@
 
-    const GROQ_KEY = "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";
-    const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+    // const GROQ_KEY = "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";
+    // const API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
     const STEPS = [
       "Decoding linguistic signatures",
@@ -67,26 +67,25 @@ Return JSON only — no markdown, no extra text:
 }`;
 
       try {
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${GROQ_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: "You are a forensic news analysis AI. Return only valid JSON. No markdown, no code blocks." },
-              { role: "user", content: prompt }
-            ],
-            response_format: { type: "json_object" },
-            temperature: 0.3
-          })
-        });
+        const res = await fetch("/analyze", {
+    method: "POST",
 
-        const data = await res.json();
-        const r = JSON.parse(data.choices[0].message.content);
-        renderResults(r);
+    headers: {
+        "Content-Type": "application/json"
+    },
+
+    body: JSON.stringify({
+        news: input
+    })
+});
+
+const data = await res.json();
+
+if (!res.ok) {
+    throw new Error(data.error || "Analysis failed");
+}
+
+renderResults(data);
 
       } catch (e) {
         alert("Analysis error — please try again.");
@@ -100,9 +99,10 @@ Return JSON only — no markdown, no extra text:
 
     function renderResults(r) {
       const score = Math.round(r.score);
-      const cls = score > 70 ? 'authentic' : score > 40 ? 'suspicious' : 'fabricated';
-      const iconMap = { authentic: 'fa-check', suspicious: 'fa-triangle-exclamation', fabricated: 'fa-xmark' };
-      const arcColors = { authentic: '#10b981', suspicious: '#f59e0b', fabricated: '#ef4444' };
+      const finalVerdict = /authentic|likely authentic/i.test(r.verdict) ? 'Real' : 'Fake';
+      const cls = finalVerdict === 'Real' ? 'authentic' : 'fabricated';
+      const iconMap = { authentic: 'fa-check', fabricated: 'fa-xmark' };
+      const arcColors = { authentic: '#10b981', fabricated: '#ef4444' };
       const metricColors = {
         good: { text: '#34d399', bar: '#10b981' },
         mid:  { text: '#fbbf24', bar: '#f59e0b' },
@@ -112,7 +112,7 @@ Return JSON only — no markdown, no extra text:
       const banner = document.getElementById('verdictBanner');
       banner.className = 'verdict-banner active ' + cls;
       document.getElementById('verdictIcon').innerHTML = `<i class="fa-solid ${iconMap[cls]}"></i>`;
-      document.getElementById('verdictTitle').textContent = `${r.verdict} — ${score}%`;
+      document.getElementById('verdictTitle').textContent = finalVerdict;
 
       const arc = document.getElementById('scoreArc');
       arc.setAttribute('stroke', arcColors[cls]);
@@ -158,11 +158,11 @@ Return JSON only — no markdown, no extra text:
       document.getElementById('resultsWrap').classList.add('active');
 
       // Build TTS script
-      const verdictWord = cls === 'authentic' ? 'likely authentic' : cls === 'suspicious' ? 'highly suspicious' : 'confirmed fabricated';
+      const verdictWord = finalVerdict === 'Real' ? 'real' : 'fake';
       const metricLines = Object.entries(r.metrics).map(([k, v]) => `${k}: ${Math.round(v)} percent`).join('. ');
-      ttsText = `Forensic analysis complete. Verdict: ${r.verdict}, with a credibility score of ${score} percent. This content is ${verdictWord}. ${r.summary} Signal breakdown — ${metricLines}.`;
+      ttsText = `Forensic analysis complete. Final verdict: ${finalVerdict}. This content is ${verdictWord}. ${r.summary} Signal breakdown — ${metricLines}.`;
 
-      document.getElementById('ttsTrackName').textContent = `${r.verdict} — ${score}% confidence`;
+      document.getElementById('ttsTrackName').textContent = `${finalVerdict} news`;
       setupTTS();
       document.getElementById('ttsPanel').classList.add('active');
 
